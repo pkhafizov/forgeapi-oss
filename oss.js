@@ -5,6 +5,7 @@ const { BucketsApi, ObjectsApi } = require('forge-apis');
 const { getClientId } = require('forgeapi-auth');
 
 const s3 = new AWS.S3();
+const ssm = new AWS.SSM();
 
 async function getBuckets(oauth_token, oauth_client, bucket_name) {
   let responseBody = '';
@@ -36,22 +37,31 @@ async function getBuckets(oauth_token, oauth_client, bucket_name) {
 }
 
 async function postObjects(oauth_token, oauth_client, bucketKey, fileName) {
-  const bucketName = process.env.BUCKET_NAME;
+  const paramBucketName = process.env.BUCKET_NAME;
+  let bucketNameParam = {
+    Name: paramBucketName
+  };
+  const bucketName = await ssm.getParameter(bucketNameParam).promise();
   const paramsObject = {
-    Bucket: bucketName,
+    Bucket: bucketName.Parameter.Value,
     Key: fileName
   };
   var originObject = await s3.getObject(paramsObject).promise();
-  await new ObjectsApi().uploadObject(
-    bucketKey,
-    fileName,
-    originObject.ContentLength,
-    originObject,
-    {},
-    oauth_client,
-    oauth_token
-  );
-  return;
+  try {
+    await new ObjectsApi().uploadObject(
+      bucketKey,
+      fileName,
+      originObject.ContentLength,
+      originObject.Body,
+      {},
+      oauth_client,
+      oauth_token
+    );
+  } catch (e) {
+    console.log(e);
+  }
+
+  return 'Ok';
 }
 
 module.exports = {
