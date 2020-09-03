@@ -1,6 +1,6 @@
 {
   "name": "forgeapi-oss",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0",
   "description": "common oss module for forge api",
   "main": "oss.js",
   "scripts": {
